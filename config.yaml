@@ -1,0 +1,355 @@
+mixed-port: 7893
+redir-port: 9797
+tproxy-port: 9898
+port: 7890
+socks-port: 7891
+mode: rule
+allow-lan: true
+log-level: info
+unified-delay: true
+external-controller: 0.0.0.0:9090
+secret: 123456
+bind-address: "*"
+external-ui: ./dashboard
+ipv6: false
+
+tun:
+  enable: true
+  stack: system
+  auto-route: true
+  auto-detect-interface: true
+  dns-hijack:
+    - any:53
+  mtu: 9000
+  inet4-route-address:
+    - 0.0.0.0/1
+    - 128.0.0.0/1
+  inet4-route-exclude-address:
+    - 100.64.0.0/10
+  inet6-route-address:
+    - ::/1
+    - 8000::/1
+
+proxies:
+  - name: USB-DIRECT
+    type: direct
+    interface-name: "usb-tether"
+
+  - name: LAN-DIRECT
+    type: direct
+    interface-name: "enp0s25"
+
+proxy-providers:
+  WARP-ID:
+    type: file
+    path: ./provide/warp-id.yaml
+    health-check:
+      enable: true
+      url: http://www.gstatic.com/generate_204
+      interval: 300
+      timeout: 5
+      lazy: true
+  WARP-SG:
+    type: file
+    path: ./provide/warp-sg.yaml
+    health-check:
+      enable: true
+      url: http://www.gstatic.com/generate_204
+      interval: 300
+      timeout: 5
+      lazy: true
+  WARP-US:
+    type: file
+    path: ./provide/warp-us.yaml
+    health-check:
+      enable: true
+      url: http://www.gstatic.com/generate_204
+      interval: 300
+      timeout: 5
+      lazy: true
+
+proxy-groups:
+  - name: 🤖 AUTO VPN
+    type: fallback
+    proxies:
+      - 🇮🇩 WARP-ID
+      - 🇸🇬 WARP-SG
+  - name: 🤖 AUTO DIRECT
+    type: fallback
+    proxies:
+      - LAN-DIRECT
+      - USB-DIRECT
+
+  - name: 🇮🇩 WARP-ID
+    type: fallback
+    use:
+      - WARP-ID
+
+  - name: 🇸🇬 WARP-SG
+    type: fallback
+    use:
+      - WARP-SG
+
+  - name: 🇺🇸 WARP-US
+    type: fallback
+    use:
+      - WARP-US
+
+  - name: Ai-Gh
+    type: select
+    proxies:
+      - LAN-DIRECT
+      - USB-DIRECT
+      - ⚖️ LB-LAN-USB
+      - ⚖️ LB-LAN-USB-VPN
+      - 🤖 AUTO VPN
+      - 🤖 AUTO DIRECT
+      - 🇮🇩 WARP-ID
+      - 🇸🇬 WARP-SG
+      - 🇺🇸 WARP-US
+
+  - name: 📺 STREAMING
+    type: select
+    proxies:
+      - LAN-DIRECT
+      - USB-DIRECT
+      - 🤖 AUTO VPN
+      - 🤖 AUTO DIRECT
+      - 🇮🇩 WARP-ID
+      - 🇸🇬 WARP-SG
+      - 🇺🇸 WARP-US
+      - ⚖️ LB-LAN-USB
+      - ⚖️ LB-LAN-USB-VPN
+
+  - name: 🎮 GAMES
+    type: select
+    proxies:
+      - LAN-DIRECT
+      - USB-DIRECT
+      - 🤖 AUTO VPN
+      - 🤖 AUTO DIRECT
+      - 🇮🇩 WARP-ID
+      - 🇸🇬 WARP-SG
+      - 🇺🇸 WARP-US
+      - ⚖️ LB-LAN-USB
+      - ⚖️ LB-LAN-USB-VPN
+
+  - name: ⚖️ LB-LAN-USB
+    type: load-balance
+    proxies:
+      - LAN-DIRECT
+      - USB-DIRECT
+    strategy: round-robin
+    disable-udp: false
+  - name: ⚖️ LB-LAN-USB-VPN
+    type: load-balance
+    proxies:
+      - 🤖 AUTO VPN
+      - USB-DIRECT
+    strategy: round-robin
+    disable-udp: false
+  - name: GLOBAL
+    type: select
+    proxies:
+      - ⚖️ LB-LAN-USB
+      - ⚖️ LB-LAN-USB-VPN
+      - LAN-DIRECT
+      - USB-DIRECT
+      - 🤖 AUTO VPN
+      - 🤖 AUTO DIRECT
+      - 🇮🇩 WARP-ID
+      - 🇸🇬 WARP-SG
+      - 🇺🇸 WARP-US
+
+dns:
+  enable: true
+  ipv6: false
+  enhanced-mode: fake-ip
+  listen: 0.0.0.0:1053
+  nameserver:
+    - https://dns.adguard.com/dns-query
+    - https://dns.google/dns-query
+    - https://cloudflare-dns.com/dns-query
+  fallback:
+    - https://dns.adguard.com/dns-query
+    - https://dns.google/dns-query
+    - https://cloudflare-dns.com/dns-query
+  fallback-filter:
+    geoip: true
+    ipcidr:
+      - 240.0.0.0/4
+      - 0.0.0.0/32
+  fake-ip-filter:
+    - "*.lan"
+    - "*.local"
+    - "*.ts.net"
+    - "100.100.100.100"
+    - "100.64.0.0/10"
+    - "dns.msftncsi.com"
+    - "www.msftncsi.com"
+    - "www.msftconnecttest.com"
+    - "stun.*.*"
+    - "stun.*.*.*"
+    - "+.stun.*.*"
+    - "+.stun.*.*.*"
+    - "+.stun.*.*.*.*"
+    - "lens.l.google.com"
+    - "stun.l.google.com"
+    - "+.n.n.srv.nintendo.net"
+    - "+.srv.nintendo.net"
+    - "+.ntp.org.cn"
+    - "+.pool.ntp.org"
+    - "ntp.ubuntu.com"
+    - "time.apple.com"
+    - "time.asia.apple.com"
+    - "time.euro.apple.com"
+    - "time.windows.com"
+    - "xbox.*.microsoft.com"
+    - "*.*.xboxlive.com"
+    - "+.*"
+    - "*.battlenet.com.cn"
+    - "+.battlenet.com"
+    - "+.blzstatic.cn"
+    - "+.battle.net"
+    - "*.msftconnecttest.com"
+    - "*.xboxlive.com"
+    - "*.battlenet.com.cn"
+    - "*.battlenet.com"
+    - "*.blzstatic.cn"
+    - "*.battle.net"
+  nameserver-policy:
+    "ts.net": 100.100.100.100
+    "100.64.0.0/10": 100.100.100.100
+  proxy-server-nameserver:
+    - 1.1.1.1
+    - 8.8.8.8
+    - 223.5.5.5
+
+rule-providers:
+  AdBlock:
+    type: http
+    behavior: classical
+    url: "https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/Advertising/Advertising_Domain.yaml"
+    path: "./rule_provider/adblock.yaml"
+    interval: 86400
+  Direct:
+    type: http
+    behavior: classical
+    url: "https://raw.githubusercontent.com/latifangren/CLASH-CONFIG-by-Latifan/main/rule_provider/direct.yaml"
+    path: "./rule_provider/direct.yaml"
+    interval: 86400
+  Reject:
+    type: http
+    behavior: classical
+    url: "https://raw.githubusercontent.com/latifangren/CLASH-CONFIG-by-Latifan/main/rule_provider/reject.yaml"
+    path: "./rule_provider/reject.yaml"
+    interval: 86400
+  Ai-Gh:
+    type: http
+    behavior: classical
+    url: "https://raw.githubusercontent.com/latifangren/clash-verge-windows-config/refs/heads/main/rule_provider/ai-gh.yaml"
+    path: "./rule_provider/ai-gh.yaml"
+    interval: 86400
+  BattleNet:
+    type: http
+    behavior: classical
+    url: "https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/Blizzard/Blizzard.yaml"
+    path: "./rule_provider/battlenet.yaml"
+    interval: 86400
+  Discord:
+    type: http
+    behavior: classical
+    url: "https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/refs/heads/master/rule/Clash/Discord/Discord.yaml"
+    path: "./rule_provider/discord.yaml"
+    interval: 86400
+  EA-Games:
+    type: http
+    behavior: classical
+    url: "https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/EA/EA.yaml"
+    path: "./rule_provider/ea-games.yaml"
+    interval: 86400
+  Facebook:
+    type: http
+    behavior: classical
+    url: "https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/refs/heads/master/rule/Clash/Facebook/Facebook.yaml"
+    path: "./rule_provider/facebook.yaml"
+    interval: 86400
+  Instagram:
+    type: http
+    behavior: classical
+    url: "https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/refs/heads/master/rule/Clash/Instagram/Instagram.yaml"
+    path: "./rule_provider/instagram.yaml"
+    interval: 86400
+  Speedtest:
+    type: http
+    behavior: classical
+    url: "https://raw.githubusercontent.com/latifangren/clash-verge-windows-config/refs/heads/main/rule_provider/speedtest.yaml"
+    path: "./rule_provider/speedtest.yaml"
+    interval: 86400
+  Steam:
+    type: http
+    behavior: classical
+    url: "https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/master/rule/Clash/Steam/Steam.yaml"
+    path: "./rule_provider/steam.yaml"
+    interval: 86400
+  Streaming:
+    type: http
+    behavior: classical
+    url: "https://raw.githubusercontent.com/latifangren/clash-verge-windows-config/refs/heads/main/rule_provider/streaming.yaml"
+    path: "./rule_provider/streaming.yaml"
+    interval: 86400
+  TikTok:
+    type: http
+    behavior: classical
+    url: "https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/refs/heads/master/rule/Clash/TikTok/TikTok.yaml"
+    path: "./rule_provider/tiktok.yaml"
+    interval: 86400
+  YouTube:
+    type: http
+    behavior: classical
+    url: "https://raw.githubusercontent.com/blackmatrix7/ios_rule_script/refs/heads/master/rule/Clash/YouTube/YouTube.yaml"
+    path: "./rule_provider/youtube.yaml"
+    interval: 86400
+
+rules:
+  # Direct & Reject
+  - RULE-SET,Direct,DIRECT
+  - RULE-SET,Reject,REJECT
+
+  # Rule Providers
+  - RULE-SET,AdBlock,REJECT
+  - RULE-SET,Speedtest,⚖️ LB-LAN-USB
+  - RULE-SET,Ai-Gh,Ai-Gh
+  - RULE-SET,Streaming,📺 STREAMING
+  - RULE-SET,Steam,🎮 GAMES
+  - RULE-SET,BattleNet,🤖 AUTO VPN
+  - RULE-SET,EA-Games,🎮 GAMES
+  - DOMAIN,wowhead.com,🇺🇸 WARP-US
+  - DOMAIN-SUFFIX,wowhead.com,🇺🇸 WARP-US
+  - RULE-SET,Discord,🤖 AUTO VPN
+  - RULE-SET,TikTok,🤖 AUTO DIRECT
+  - RULE-SET,Instagram,🤖 AUTO DIRECT
+  - RULE-SET,YouTube,🤖 AUTO DIRECT
+  - RULE-SET,Facebook,🤖 AUTO DIRECT
+
+  # Default
+  - MATCH,GLOBAL
+
+profile:
+  store-selected: true
+  store-fake-ip: true
+  store-cache-selected: true
+
+sniffer:
+  enable: true
+  parse-pure-ip: true
+
+experimental:
+  ignore-resolve-fail: true
+  sniff-tls-sni: true
+  tracing: false
+  tcp-concurrent: true
+  udp-fallback-policy: DIRECT
+
+hosts:
+  localhost: 127.0.0.1
