@@ -84,7 +84,7 @@ mihomo-linux/
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/mihomo-linux.git
+   git clone https://github.com/latifangren/mihomo-linux.git
    cd mihomo-linux
    ```
 
@@ -250,8 +250,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📞 Support
 
-- **Issues**: [GitHub Issues](https://github.com/yourusername/mihomo-linux/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/yourusername/mihomo-linux/discussions)
+- **Issues**: [GitHub Issues](https://github.com/latifangren/mihomo-linux/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/latifangren/mihomo-linux/discussions)
 
 ## 🙏 Acknowledgments
 
